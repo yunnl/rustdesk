@@ -1,25 +1,18 @@
-name: Merge upstream branches
+# .github/workflows/sync.yml
+name: Sync Fork
+
 on:
-  push:
+  push: # push 时触发, 主要是为了测试配置有没有问题
   schedule:
-    - cron:  '0 23 * * *'
-  watch:
-    types: [started]
+    - cron: '* */6 * * *' # 每3小时触发, 对于一些更新不那么频繁的项目可以设置为每天一次, 低碳一点
 jobs:
-  merge:
+  repo-sync:
     runs-on: ubuntu-latest
-    if: github.event.repository.owner.id == github.event.sender.id
     steps:
-      - uses: actions/checkout@v2.3.5
-      - name: Merge upstream
-        run: |
-          git config --global user.name 'yunnl'
-          git config --global user.email 'yunnl@qq.com'
-          git pull --unshallow
-          git remote add upstream https://github.com/rustdesk/rustdesk.git
-          git fetch upstream
-          git checkout master
-          git merge --no-edit upstream/master
-          git push origin master
-          git fetch upstream --tags
-          git push --tags
+      - uses: TG908/fork-sync@v1.6.3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          owner: rustdesk # fork 的上游仓库 user
+          head: master # fork 的上游仓库 branch
+          base: master # 本地仓库 branch
+

@@ -20,10 +20,9 @@ use hbb_common::{
     rendezvous_proto::*,
     sleep,
     socket_client::{self, connect_tcp, is_ipv4},
-    tcp::FramedStream,
     tokio::{self, select, sync::Mutex, time::interval},
     udp::FramedSocket,
-    AddrMangle, IntoTargetAddr, ResultType, TargetAddr,
+    AddrMangle, IntoTargetAddr, ResultType, Stream, TargetAddr,
 };
 
 use crate::{
@@ -62,6 +61,10 @@ impl RendezvousMediator {
             }
         }
         crate::hbbs_http::sync::start();
+        #[cfg(target_os = "windows")]
+        if crate::platform::is_installed() && !crate::is_custom_client() {
+            crate::updater::start_auto_update();
+        }
         let mut nat_tested = false;
         check_zombie();
         let server = new_server();
@@ -384,14 +387,8 @@ impl RendezvousMediator {
     pub async fn start(server: ServerPtr, host: String) -> ResultType<()> {
         log::info!("start rendezvous mediator of {}", host);
         //If the investment agent type is http or https, then tcp forwarding is enabled.
-        let is_http_proxy = if let Some(conf) = Config::get_socks() {
-            let proxy = Proxy::from_conf(&conf, None)?;
-            proxy.is_http_or_https()
-        } else {
-            false
-        };
         if (cfg!(debug_assertions) && option_env!("TEST_TCP").is_some())
-            || is_http_proxy
+            || Config::is_proxy() 
             || get_builtin_option(config::keys::OPTION_DISABLE_UDP) == "Y"
         {
             Self::start_tcp(server, host).await
@@ -706,7 +703,7 @@ async fn direct_server(server: ServerPtr) {
 
 enum Sink<'a> {
     Framed(&'a mut FramedSocket, &'a TargetAddr<'a>),
-    Stream(&'a mut FramedStream),
+    Stream(&'a mut Stream),
 }
 
 impl Sink<'_> {

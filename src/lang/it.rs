@@ -698,5 +698,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("Use WebSocket", "Usa WebSocket"),
         ("Trackpad speed", "Velocità trackpad"),
         ("Default trackpad speed", "Velocità predefinita trackpad"),
+        ("Numeric one-time password", "Password numerica monouso"),
+        ("Enable IPv6 P2P connection", ""),
+        ("Enable UDP hole punching", ""),
     ].iter().cloned().collect();
 }
